@@ -53,7 +53,7 @@ export const HOME_DATA = {
         id: 1,
         title: 'Super Sale Strip Banner',
         imageUrl: '/images/Untitled design.png',
-        link: '#',
+        link: '/online-sale',
       },
     ],
   },

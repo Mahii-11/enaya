@@ -1,67 +1,85 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, ChevronDown, Menu, X, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SpecialMenuBar from './SpecialMenuBar';
+import { useDispatch, useSelector } from 'react-redux';
+import { getTotalCartQuantity, openCartPopup } from '../../cart/cartSlice';
 
 const NAV_ITEMS = [
-  { label: 'Home', href: '#' },
+  { label: 'Home', to: '/' },
   {
     label: 'Presets',
-    href: '#presets',
+    to: '/shop-page',
     hasDropdown: true,
     items: [
-      { name: 'Minimal Glow', href: '#glow' },
-      { name: 'Pure Hydration', href: '#hydration' },
-      { name: 'Radiance Boost', href: '#radiance' },
-      { name: 'Night Repair', href: '#repair', badge: 'New' },
+      { name: 'Minimal Glow', to: '/shop-page?category=glow' },
+      { name: 'Pure Hydration', to: '/shop-page?category=hydration' },
+      { name: 'Radiance Boost', to: '/shop-page?category=radiance' },
+      { name: 'Night Repair', to: '/shop-page?category=repair', badge: 'New' },
     ],
   },
   {
     label: 'Shop',
-    href: '#shop',
+    to: '/shop-page',
     hasDropdown: true,
     items: [
-      { name: 'All Products', href: '#all' },
-      { name: 'Cleansers & Toners', href: '#cleansers' },
-      { name: 'Active Serums', href: '#serums', badge: 'Popular' },
-      { name: 'Moisturizers & Creams', href: '#moisturizers' },
-      { name: 'Sun Protection (SPF)', href: '#spf' },
+      { name: 'All Products', to: '/shop-page' },
+      { name: 'Cleansers & Toners', to: '/shop-page?category=cleansers' },
+      { name: 'Active Serums', to: '/shop-page?category=serums', badge: 'Popular' },
+      { name: 'Moisturizers & Creams', to: '/shop-page?category=moisturizers' },
+      { name: 'Sun Protection (SPF)', to: '/shop-page?category=spf' },
     ],
   },
   {
     label: 'Collections',
-    href: '#collections',
+    to: '/shop-page',
     hasDropdown: true,
     items: [
-      { name: 'Botanical Essentials', href: '#essentials' },
-      { name: 'Ceramide Recovery', href: '#ceramide' },
-      { name: 'Vitamin C Radiance', href: '#vitaminc' },
-      { name: 'Travel Minis Kit', href: '#travel' },
+      { name: 'Botanical Essentials', to: '/shop-page?category=essentials' },
+      { name: 'Ceramide Recovery', to: '/shop-page?category=ceramide' },
+      { name: 'Vitamin C Radiance', to: '/shop-page?category=vitaminc' },
+      { name: 'Travel Minis Kit', to: '/shop-page?category=travel' },
     ],
   },
   {
     label: 'Pages',
-    href: '#pages',
+    to: '/about',
     hasDropdown: true,
     items: [
-      { name: 'Our Philosophy', href: '#about' },
-      { name: 'Clinical Studies', href: '#clinical' },
-      { name: 'Ingredient Glossary', href: '#ingredients' },
-      { name: 'Sustainability', href: '#sustainability' },
+      { name: 'Our Philosophy', to: '/about' },
+      { name: 'Clinical Studies', to: '/clinical' },
+      { name: 'Ingredient Glossary', to: '/ingredients' },
+      { name: 'Sustainability', to: '/sustainability' },
     ],
   },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Contact', to: '/our-location' },
 ];
 
 /* Reusable underline-hover link */
-function UnderlineLink({ href, className = '', children, onClick }) {
+// `to` থাকলে router Link, না থাকলে শুধু span (যাতে বাইরের Link-এর ভেতরে nested <a> না হয়)
+function UnderlineLink({ to, className = '', children, onClick }) {
+  const classes = `relative inline-block group/link ${className}`;
+  const underline = (
+    <span
+      className="pointer-events-none absolute left-0 -bottom-0.5 h-[1.5px] w-full origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover/link:scale-x-100"
+    />
+  );
+
+  if (!to) {
+    return (
+      <span className={classes}>
+        {children}
+        {underline}
+      </span>
+    );
+  }
+
   return (
-    <a href={href} onClick={onClick} className={`relative inline-block group/link ${className}`}>
+    <Link to={to} onClick={onClick} className={classes}>
       {children}
-      <span
-        className="pointer-events-none absolute left-0 -bottom-0.5 h-[1.5px] w-full origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover/link:scale-x-100"
-      />
-    </a>
+      {underline}
+    </Link>
   );
 }
 
@@ -70,7 +88,8 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSubOpen, setMobileSubOpen] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [cartCount] = useState(2);
+  const dispatch = useDispatch();
+  const cartCount = useSelector(getTotalCartQuantity);
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Sticky navbar listener
@@ -105,14 +124,14 @@ export default function Navbar() {
       >
         {/* Brand Logo */}
         <div className="flex items-center">
-          <a
-            href="#"
+          <Link
+            to="/"
             id="brand-logo"
             className="font-editorial text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900 transition-opacity hover:opacity-80 flex items-center gap-1"
           >
             <span className="italic font-serif">Sleek</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#D4A373] inline-block mb-1"></span>
-          </a>
+          </Link>
         </div>
 
         {/* Center Desktop Navigation Links */}
@@ -125,7 +144,7 @@ export default function Navbar() {
               onMouseLeave={() => setActiveDropdown(null)}
             >
               <UnderlineLink
-                href={item.href}
+                to={item.to}
                 className="flex items-center gap-1.5 py-2 text-neutral-800 hover:text-[#C8795A] font-medium tracking-normal transition-colors"
               >
                 <span className="flex items-center gap-1.5">
@@ -149,23 +168,24 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute top-full left-0 w-60 py-2.5 bg-white rounded-2xl shadow-xl shadow-stone-900/5 border border-stone-200/80 z-50 overflow-hidden"
+                      className="absolute top-full left-0 w-60 py-2.5 bg-black/55 backdrop-blur-[2px] rounded-2xl shadow-2xl border border-white/10 z-50 overflow-hidden"
                     >
                       {item.items.map((subItem) => (
-                        <a
+                        <Link
                           key={subItem.name}
-                          href={subItem.href}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm text-neutral-700 hover:text-neutral-950 hover:bg-[#F9F5F1] transition-colors group/child"
+                          to={subItem.to}
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center justify-between px-4 py-2.5 text-sm text-[#E7C9A0]/80 hover:text-white hover:bg-white/10 transition-colors group/child"
                         >
-                          <UnderlineLink href={undefined} className="text-neutral-700 group-hover/child:text-[#C8795A] transition-colors">
+                          <UnderlineLink className="text-[#E7C9A0]/80 group-hover/child:text-white transition-colors">
                             {subItem.name}
                           </UnderlineLink>
                           {subItem.badge && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#EAD2C1] text-neutral-800 font-semibold uppercase tracking-wider">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E7C9A0]/15 text-[#E7C9A0] font-semibold uppercase tracking-wider">
                               {subItem.badge}
                             </span>
                           )}
-                        </a>
+                        </Link>
                       ))}
                     </motion.div>
                   )}
@@ -223,6 +243,7 @@ export default function Navbar() {
           {/* Shopping Bag / Cart */}
           <button
             id="header-cart-btn"
+            onClick={() => dispatch(openCartPopup())}
             className="p-1.5 hover:text-neutral-500 transition-colors cursor-pointer relative"
             aria-label="Shopping Cart"
             title="Bag"
@@ -319,29 +340,32 @@ export default function Navbar() {
               <div className="flex-1 overflow-y-auto px-5 py-3">
                 {NAV_ITEMS.map((item) => (
                   <div key={item.label} className="border-b border-white/10">
-                    <button
-                      onClick={() =>
-                        item.hasDropdown ? toggleMobileSub(item.label) : setMobileMenuOpen(false)
-                      }
-                      className="w-full flex items-center justify-between py-3.5 text-[15px] font-medium text-left"
-                    >
-                      <UnderlineLink
-                        href={item.hasDropdown ? undefined : item.href}
-                        onClick={(e) => {
-                          if (item.hasDropdown) e.preventDefault();
-                        }}
-                        className="text-[#E7C9A0] hover:text-white transition-colors duration-200"
+                    {item.hasDropdown ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleMobileSub(item.label)}
+                        className="w-full flex items-center justify-between py-3.5 text-[15px] font-medium text-left"
                       >
-                        {item.label}
-                      </UnderlineLink>
-                      {item.hasDropdown && (
+                        <UnderlineLink className="text-[#E7C9A0] hover:text-white transition-colors duration-200">
+                          {item.label}
+                        </UnderlineLink>
                         <ChevronDown
                           className={`w-4 h-4 text-[#E7C9A0]/70 transition-transform duration-200 ${
                             mobileSubOpen === item.label ? 'rotate-180' : ''
                           }`}
                         />
-                      )}
-                    </button>
+                      </button>
+                    ) : (
+                      <Link
+                        to={item.to}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full flex items-center justify-between py-3.5 text-[15px] font-medium text-left"
+                      >
+                        <UnderlineLink className="text-[#E7C9A0] hover:text-white transition-colors duration-200">
+                          {item.label}
+                        </UnderlineLink>
+                      </Link>
+                    )}
 
                     {item.hasDropdown && (
                       <AnimatePresence initial={false}>
@@ -354,14 +378,13 @@ export default function Navbar() {
                             className="overflow-hidden pl-3 pb-2"
                           >
                             {item.items.map((sub) => (
-                              <a
+                              <Link
                                 key={sub.name}
-                                href={sub.href}
+                                to={sub.to}
                                 onClick={() => setMobileMenuOpen(false)}
                                 className="flex items-center justify-between py-2 text-sm text-[#E7C9A0]/80"
                               >
                                 <UnderlineLink
-                                  href={undefined}
                                   className="text-[#E7C9A0]/80 hover:text-white transition-colors duration-200"
                                 >
                                   {sub.name}
@@ -371,7 +394,7 @@ export default function Navbar() {
                                     {sub.badge}
                                   </span>
                                 )}
-                              </a>
+                              </Link>
                             ))}
                           </motion.div>
                         )}
@@ -386,10 +409,14 @@ export default function Navbar() {
                   <Phone className="w-4 h-4" />
                   Call: (+880) 01999080846
                 </a>
-                <a href="#wishlist" className="flex items-center gap-2 text-sm text-white">
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm text-white"
+                >
                   <Heart className="w-4 h-4" />
                   My wishlist
-                </a>
+                </Link>
               </div>
             </motion.div>
           </>

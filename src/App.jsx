@@ -1,9 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import Home from "./pages/Home"; 
-import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import ProductDetails from "./pages/ProductDetails";
 import ThankYouPage from "./pages/ThankYouPage";
 import AuthPage from "./pages/AuthPage";
 import SearchPage from "./pages/SearchPage";
@@ -14,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import OrderDetails from "./components/dashboard/OrderDetails";
 import ShopPage from "./pages/shoppages/ShopPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
-import ProductDetailsPagenumone from "./pages/ProductDetailsPagenumone"
+import Notfound from "./pages/Notfound";
 
 const router = createBrowserRouter([
   {
@@ -27,11 +25,6 @@ const router = createBrowserRouter([
       },
 
       {
-        path: "/cart",
-        element: <Cart />,
-       },
-       
-      {
         path: "/checkout",
         element: <Checkout />
       },
@@ -40,7 +33,7 @@ const router = createBrowserRouter([
 
       {
         path: "/product-details/:slug",
-        element: <ProductDetails />
+        element: <ProductDetailsPage />
       },
 
       {
@@ -91,15 +84,10 @@ const router = createBrowserRouter([
       },
 
       {
-        path: "/productdetailspage",
-        element: <ProductDetailsPage />
+        path: "*",
+        element: <Notfound />
       },
 
-      {
-        path: "/productDetailsPagenumone",
-        element: <ProductDetailsPagenumone/>
-      }
- 
   
 
     ],

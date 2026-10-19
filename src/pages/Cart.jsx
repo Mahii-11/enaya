@@ -41,14 +41,14 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-4">
              {cartItems.map((item) => (
                 <div
-                key={item.product_slug + item.variation_id + item.color_id}
+                key={`${item.slug}-${item.variant_id}`}
                className="bg-white p-4 sm:p-5 md:p-6 rounded-xl border flex  flex-row gap-4 items-start sm:items-center transition-shadow hover:shadow-lg"
                 >
                {/* Image */}
                <div className="w-24 h-24 sm:w-24 md:w-28 lg:w-32  sm:h-24 md:h-28 lg:h-32 bg-muted/20 rounded-lg overflow-hidden flex-shrink-0">
                     <img
                        src={item.image || "/images/motorola.png"}
-                       alt={item.product_name}
+                       alt={item.name}
                        className="w-full h-full object-cover"
                        onError={(e) => {
                        e.target.onerror = null;
@@ -59,15 +59,21 @@ export default function Cart() {
 
       {/* Product Details */}
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <Link to={`/product-details/${item.product_slug}`}>
+        <Link to={`/product-details/${item.slug}`}>
           <h3 className="font-semibold hover:text-red-600 transition-colors line-clamp-2 text-sm sm:text-base md:text-lg">
-            {item.product_name}
+            {item.name}
           </h3>
         </Link>
-        <div className="text-muted-foreground text-xs sm:text-sm mt-0.5 flex flex-wrap gap-2">
-          {item.variation_size && <span>Size: {item.variation_size}</span>}
-          {item.color_name && <span>Color: {item.color_name}</span>}
-        </div>
+        {(item.size_name || item.color_name) && (
+          <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+            {[
+              item.size_name && `Size: ${item.size_name}`,
+              item.color_name && `Color: ${item.color_name}`,
+            ]
+              .filter(Boolean)
+              .join(" | ")}
+          </p>
+        )}
         <p className="text-muted-foreground text-sm sm:text-base mt-1 font-medium">
           ৳{item.totalPrice}
         </p>
@@ -78,14 +84,14 @@ export default function Cart() {
         {/* Quantity */}
         <div className="flex items-center border rounded-lg bg-background overflow-hidden">
           <button
-            onClick={() => dispatch(decreaseItemQuantity(item.product_slug))}
+            onClick={() => dispatch(decreaseItemQuantity({ slug: item.slug, variant_id: item.variant_id }))}
             className="p-2 hover:bg-muted transition-colors rounded-l-lg"
           >
             <Minus className="h-3 w-3" />
           </button>
           <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
           <button
-            onClick={() => dispatch(increaseItemQuantity(item.product_slug))}
+            onClick={() => dispatch(increaseItemQuantity({ slug: item.slug, variant_id: item.variant_id }))}
             className="p-2 hover:bg-muted transition-colors rounded-r-lg"
           >
             <Plus className="h-3 w-3" />
@@ -94,7 +100,7 @@ export default function Cart() {
 
         {/* Delete */}
         <Button
-          onClick={() => dispatch(deleteItem(item.product_slug))}
+          onClick={() => dispatch(deleteItem({ slug: item.slug, variant_id: item.variant_id }))}
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-destructive"

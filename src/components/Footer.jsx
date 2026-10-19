@@ -13,16 +13,15 @@ const QUICK_LINKS = [
   { label: "Home", to: "/" },
   { label: "Shop All", to: "/shop-page" },
   { label: "Online Sale", to: "/online-sale" },
-  { label: "My Cart", to: "/cart" },
   { label: "Order History", to: "/dashboard" },
 ];
 
 const CARE_LINKS = [
-  { label: "Contact Us", href: "#" },
-  { label: "Shipping Policy", href: "#" },
-  { label: "Returns & Exchanges", href: "#" },
-  { label: "FAQs", href: "#" },
-  { label: "Terms of Service", href: "#" },
+  { label: "Contact Us", to: "/our-location" },
+  { label: "Shipping Policy", to: "/shipping-policy" },
+  { label: "Returns & Exchanges", to: "/returns-exchanges" },
+  { label: "FAQs", to: "/faqs" },
+  { label: "Terms of Service", to: "/terms-of-service" },
 ];
 
 const SOCIALS = [
@@ -92,9 +91,9 @@ export default function Footer() {
             <ul className="space-y-1.5 text-sm">
               {CARE_LINKS.map((l) => (
                 <li key={l.label}>
-                  <a href={l.href} className={linkClass}>
+                  <Link to={l.to} className={linkClass}>
                     {l.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -134,12 +133,12 @@ export default function Footer() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-5 sm:py-6 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 text-xs text-slate-500 text-center sm:text-left">
           <p>© {new Date().getFullYear()} GadgetGlobe. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <a href="#" className="hover:text-slate-300 transition-colors">
+            <Link to="/privacy-policy" className="hover:text-slate-300 transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-slate-300 transition-colors">
+            </Link>
+            <Link to="/cookie-policy" className="hover:text-slate-300 transition-colors">
               Cookie Policy
-            </a>
+            </Link>
           </div>
         </div>
       </div>

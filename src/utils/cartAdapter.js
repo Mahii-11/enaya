@@ -1,32 +1,42 @@
-export function normalizeProductForCart(product, selectedVariation, selectedColor, quantity = 1) {
+// Product (details পেজের nested শেপ বা card-এর flat শেপ) থেকে cartSlice.addItem-এর payload বানায়
+export function normalizeProductForCart(
+  product,
+  selectedVariant = null,
+  selectedColor = null,
+  quantity = 1,
+  selectedSize = null
+) {
   if (!product) return null;
 
-    const price = selectedVariation?.price ?? 
-                product.discount_price ??
-                product.price?.final ??
-                product.price?.offer ??
-                product.price?.regular ??
-                product.original_price ??
-                product.price ??
-                0;
+  const priceObj = product.price && typeof product.price === "object" ? product.price : null;
 
-  const numericPrice = Number(price) || 0;
+  // size/color আলাদা না পাঠালে variant থেকে নেয়
+  const size =
+    selectedSize ||
+    (selectedVariant?.size
+      ? { size_id: selectedVariant.size_id, size: selectedVariant.size }
+      : null);
 
   return {
     id: product.id || product.product_id,
-    product_id: product.id || product.product_id,
-    product_slug: product.product_slug || product.slug || "",
-    product_name: product.product_name || product.name || "Unknown Product",
-    image: product.thumb_image || product.image || product.thumbnail || "/images/motorola.png",
-    variation_id: selectedVariation?.id || null,
-    size_id: selectedVariation?.size_id || null,
-    variation_size_id: selectedVariation?.size_id || null, // backend match
-    variation_size: selectedVariation?.size || null,
-    color_id: selectedColor?.color_id || selectedColor?.id || null, // backend match
-    color_name: selectedColor?.name || null,
-    quantity: quantity,
-    discount_price: numericPrice,
-    unit_price: numericPrice,
-    totalPrice: numericPrice,
+    name: product.name || product.product_name || "Unknown Product",
+    slug: product.slug || product.product_slug || "",
+    thumb_image: product.thumb_image || product.thumbnail || null,
+    image: product.image || "",
+    brand: product.brand,
+    brand_name: product.brand_name,
+    quantity,
+
+    has_variants: Boolean(product.variants?.length > 0 || selectedVariant),
+    variant_id: selectedVariant?.id || 0,
+    selectedSize: size ? { id: size.size_id ?? size.id, name: size.size ?? size.name } : null,
+    selectedColor: selectedColor
+      ? { id: selectedColor.color_id ?? selectedColor.id, name: selectedColor.name }
+      : null,
+
+    selected_price: selectedVariant?.price ?? null,
+    offer_price: priceObj ? priceObj.offer ?? priceObj.final ?? null : null,
+    price: priceObj ? priceObj.regular ?? null : product.discount_price ?? product.price ?? null,
+    min_price: product.min_price ?? null,
   };
 }

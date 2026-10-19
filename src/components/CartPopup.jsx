@@ -81,7 +81,7 @@ export default function CartPopup({ popup, onClose }) {
             </button>
 
             <Link
-              to="/cart"
+              to="/checkout"
               className="
               flex-1
               text-center
@@ -93,7 +93,7 @@ export default function CartPopup({ popup, onClose }) {
               transition
               "
             >
-              View Cart
+              Checkout
             </Link>
 
           </div>

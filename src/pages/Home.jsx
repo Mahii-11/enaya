@@ -1,6 +1,6 @@
 import XiaomiProductsSection from "../components/XiaomiProductsSection";
-import ThinImageBanner from "../components/ThinImageBanner";
-import HijabSection from "../components/HijabSection";
+//import ThinImageBanner from "../components/ThinImageBanner";
+//import HijabSection from "../components/HijabSection";
 import { HeroSlider } from '../components/home/HeroSlider';
 import CategoryAndBanner from "../components/CategoryAndBanner";
 import WatchAndShop from "../components/WatchAndShop";
@@ -13,8 +13,7 @@ export default function Home() {
       <HeroSlider />
       <CategoryAndBanner />
       <XiaomiProductsSection />
-      <ThinImageBanner />
-      <HijabSection />
+     
       <WatchAndShop />
      
     </div>

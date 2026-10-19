@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 // Banner Data Array of Objects
 const bannerData = [
@@ -7,7 +8,7 @@ const bannerData = [
     title: 'Super Sale Strip Banner',
     // 1920x300 pixel design e-commerce banner height e ekdom chikon hoy
     imageUrl: '/images/Untitled design.png',
-    link: '#',
+    link: '/online-sale',
   },
 ];
 
@@ -18,7 +19,7 @@ export default function ThinImageBanner() {
     <section className="w-full max-w-[1600px] mx-auto px-2 sm:px-4 py-3 md:py-5">
       {/* Banner Container */}
       <div className="w-full overflow-hidden rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-        <a href={banner.link} className="block w-full">
+        <Link to={banner.link} className="block w-full">
           <img
             src={banner.imageUrl}
             alt={banner.title}
@@ -29,7 +30,7 @@ export default function ThinImageBanner() {
             */
             className="w-full h-auto aspect-[5/1] sm:aspect-[6/1] md:aspect-[8/1] object-cover block"
           />
-        </a>
+        </Link>
       </div>
     </section>
   );

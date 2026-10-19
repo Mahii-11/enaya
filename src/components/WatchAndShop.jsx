@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FaBolt, FaCartPlus } from "react-icons/fa";
 import { getWatchShopProducts } from "../services/api";
 import WatchShopSkeleton from "../loader/WatchShopSkeleton";
 import { getPriceInfo } from "../utils/productPrice";
+import useProductCardCart from "../hooks/useProductCardCart";
+import SelectOptionsPopup from "./SelectOptionsPopup";
 
 /*
   `video_embed_url` / `video_url` from the API can be an embed URL, a watch / shorts / youtu.be URL
@@ -94,9 +96,8 @@ const getIframeStyle = (orientation) => {
 const slotClass =
   "shrink-0 mr-3 w-[calc((100cqw_-_1.5rem)/2)] md:w-[calc((100cqw_-_3rem)/4)] lg:w-[calc((100cqw_-_3.75rem)/5)]";
 
-const VideoProductCard = ({ product, rootRef, isClone = false }) => {
+const VideoProductCard = ({ product, rootRef, onBuyNow, onAddToCart, isClone = false }) => {
   const boxRef = useRef(null);
-  const navigate = useNavigate();
   const [inView, setInView] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -108,8 +109,6 @@ const VideoProductCard = ({ product, rootRef, isClone = false }) => {
   const { current, original } = getPriceInfo(product);
   const detailsPath = `/product-details/${product.slug}`;
 
-  // Variable প্রডাক্টে ভ্যারিয়েন্ট বেছে নিতে হয়, তাই দুই বাটনই ডিটেইলস পেজে নিয়ে যায়
-  const goToDetails = () => navigate(detailsPath);
 
   /*
     Only mount the YouTube iframe while the card is on (or just next to) the
@@ -205,7 +204,7 @@ const VideoProductCard = ({ product, rootRef, isClone = false }) => {
           <button
             type="button"
             title="Buy Now"
-            onClick={goToDetails}
+            onClick={() => onBuyNow(product)}
             tabIndex={tabIndex}
             className="hidden md:flex relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md items-center justify-center gap-1 transition-colors duration-300 leading-tight"
           >
@@ -223,7 +222,7 @@ const VideoProductCard = ({ product, rootRef, isClone = false }) => {
           <button
             type="button"
             title="Add to Cart"
-            onClick={goToDetails}
+            onClick={() => onAddToCart(product)}
             tabIndex={tabIndex}
             className="col-span-1 relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-colors duration-300 leading-tight"
           >
@@ -251,6 +250,7 @@ const WatchAndShop = ({
   const viewportRef = useRef(null);
   const [fetched, setFetched] = useState(null);
   const [failed, setFailed] = useState(false);
+  const { addToCart, buyNow, optionsProduct, closeOptions, goToDetails } = useProductCardCart();
 
   useEffect(() => {
     let cancelled = false;
@@ -321,7 +321,7 @@ const WatchAndShop = ({
           <div className="flex shrink-0">
             {products.map((product, index) => (
               <div key={`${product.id}-${index}`} className={slotClass}>
-                <VideoProductCard product={product} rootRef={viewportRef} />
+                <VideoProductCard product={product} rootRef={viewportRef} onBuyNow={buyNow} onAddToCart={addToCart} />
               </div>
             ))}
           </div>
@@ -330,12 +330,18 @@ const WatchAndShop = ({
           <div className="flex shrink-0" aria-hidden="true">
             {products.map((product, index) => (
               <div key={`clone-${product.id}-${index}`} className={slotClass}>
-                <VideoProductCard isClone product={product} rootRef={viewportRef} />
+                <VideoProductCard isClone product={product} rootRef={viewportRef} onBuyNow={buyNow} onAddToCart={addToCart} />
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      <SelectOptionsPopup
+        product={optionsProduct}
+        onClose={closeOptions}
+        onSelectOptions={goToDetails}
+      />
     </section>
   );
 };

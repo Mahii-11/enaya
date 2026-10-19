@@ -45,6 +45,16 @@ export const getSliders = async () => {
 }
 
 
+// Get single product details (sizes, colors, combinations, related products)
+export const getProductDetails = async (slug) => {
+    const res = await fetchData(`product-details/${encodeURIComponent(slug)}`);
+    if (!res.status || !res.data?.id) {
+        throw new Error(`Product details fetch unsuccessful for slug: ${slug}`);
+    }
+    return res.data;
+}
+
+
 // Get Featured Categories
 export const getFeaturedCategories = async () => {
     const res = await fetchData("featured-category-data");
@@ -237,31 +247,36 @@ export const getProductDetailsBySlug = async (slug) => {
 } */
 
 
-export async function createOrder(orderData) {
+// Place order: POST /checkout (JSON)
+//   payload: { name, phone, address, shipping_method, items: [{ product_id, quantity, size_id?, color_id? }] }
+// success: { status: true, msg, data: { id, invoice_no, total, thank_you_url, summary } }
+// error (422): { message, errors: { field: [..] } } -> { status: false, msg }
+export async function createOrder(payload) {
+  const response = await fetch(`${BASE_URL}checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let body = null;
   try {
-    const response = await fetch(`${BASE_URL}store-order`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      body: orderData,
-    });
-
-    console.log("STATUS:", response.status);
-
-    const text = await response.text();
-    console.log("SERVER RESPONSE:", text);
-
-    if (!text) {
-      return { success: false, msg: "Empty response from server" };
-    }
-
-    return JSON.parse(text);
-
-  } catch (error) {
-    console.error("Error in createOrder:", error);
-    throw error;
+    body = await response.json();
+  } catch {
+    return { status: false, msg: `Server error (${response.status})` };
   }
+
+  if (!response.ok || !body?.status) {
+    const firstError = body?.errors && Object.values(body.errors).flat()[0];
+    return {
+      status: false,
+      msg: firstError || body?.msg || body?.message || `Order failed (${response.status})`,
+    };
+  }
+
+  return body;
 }
 
 

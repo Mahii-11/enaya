@@ -55,22 +55,13 @@ export default function ProductDetails() {
         // Initial default selections
         setSelectedImage(prd.thumbnail || "/images/motorola.png");
 
-        const defaultColor = prd.colors?.[0] || null;
-        const defaultSize = prd.size_chart?.[0] || null;
+        // Size/Color ইউজারকে নিজে বেছে নিতে হবে, তাই কোনো ডিফল্ট সিলেকশন নেই
+        setSelectedColor(null);
+        setSelectedSize(null);
 
-        setSelectedColor(defaultColor);
-        setSelectedSize(defaultSize);
-
-        // Find initial matching variant
-        if (prd.variants?.length > 0) {
-          const initialVariant = findMatchingVariant(
-            prd.variants,
-            defaultColor?.name,
-            defaultSize?.size
-          ) || prd.variants[0];
-
-          setSelectedVariant(initialVariant);
-        }
+        // Size/Color ছাড়া শুধু variant থাকলে প্রথমটাই ধরা হয়
+        const needsSelection = prd.colors?.length > 0 || prd.size_chart?.length > 0;
+        setSelectedVariant(!needsSelection && prd.variants?.length > 0 ? prd.variants[0] : null);
       } catch (error) {
         console.error("Error fetching product details:", error);
         setProduct(null);
@@ -123,6 +114,30 @@ export default function ProductDetails() {
     }
   };
 
+  // Stock না থাকা size/color disabled দেখাবে (অন্যটা বেছে থাকলে তার সাথে মিলিয়ে)
+  const isVariantInStock = (v) => v.in_stock && v.quantity > 0;
+  const sameText = (a, b) => a?.toLowerCase() === b?.toLowerCase();
+
+  const isSizeAvailable = (sizeObj) => {
+    if (!product?.variants?.length) return true;
+    return product.variants.some(
+      (v) =>
+        sameText(v.size, sizeObj.size) &&
+        (!selectedColor || sameText(v.color, selectedColor.name)) &&
+        isVariantInStock(v)
+    );
+  };
+
+  const isColorAvailable = (color) => {
+    if (!product?.variants?.length) return true;
+    return product.variants.some(
+      (v) =>
+        sameText(v.color, color.name) &&
+        (!selectedSize || sameText(v.size, selectedSize.size)) &&
+        isVariantInStock(v)
+    );
+  };
+
   if (loading) return <Loader type="productdetails" />;
 
   if (!product) {
@@ -165,7 +180,8 @@ export default function ProductDetails() {
       product,
       selectedVariant,
       selectedColor,
-      quantity
+      quantity,
+      selectedSize
     );
 
     dispatch(addItem(normalizedProduct));
@@ -200,12 +216,13 @@ export default function ProductDetails() {
       product,
       selectedVariant,
       selectedColor,
-      quantity
+      quantity,
+      selectedSize
     );
 
-    navigate("/checkout", {
-      state: { item },
-    });
+    // Buy Now: silent add, তাই toast/sound হয় না
+    dispatch(addItem({ ...item, silent: true }));
+    navigate("/checkout");
   };
 
   const handleCustomMeasurementChange = (e) => {
@@ -323,12 +340,17 @@ export default function ProductDetails() {
                   <div className="flex flex-wrap gap-2">
                     {product.size_chart.map((sizeObj) => {
                       const isSelected = selectedSize?.size_id === sizeObj.size_id;
+                      const available = isSizeAvailable(sizeObj);
                       return (
                         <button
                           key={sizeObj.size_id}
+                          disabled={!available}
+                          title={available ? sizeObj.size : `${sizeObj.size} - Out of stock`}
                           onClick={() => handleSizeSelect(sizeObj)}
                           className={`w-9 h-9 border rounded flex items-center justify-center text-xs uppercase font-medium transition ${
-                            isSelected
+                            !available
+                              ? "border-gray-200 text-gray-300 line-through cursor-not-allowed"
+                              : isSelected
                               ? "border-black bg-black text-white"
                               : "border-gray-300 text-gray-700 hover:border-gray-400"
                           }`}
@@ -348,17 +370,19 @@ export default function ProductDetails() {
                   <div className="flex flex-wrap gap-2 items-center">
                     {product.colors.map((color) => {
                       const isSelected = selectedColor?.color_id === color.color_id;
+                      const available = isColorAvailable(color);
                       return (
                         <button
                           key={color.id}
+                          disabled={!available}
                           onClick={() => handleColorSelect(color)}
                           className={`w-6 h-6 rounded-full border-2 transition ${
                             isSelected
                               ? "ring-2 ring-blue-500 ring-offset-1 border-white"
                               : "border-gray-300"
-                          }`}
+                          } ${!available ? "opacity-30 cursor-not-allowed" : ""}`}
                           style={{ backgroundColor: color.code || color.name }}
-                          title={color.name}
+                          title={available ? color.name : `${color.name} - Out of stock`}
                         />
                       );
                     })}

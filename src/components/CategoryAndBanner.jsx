@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import FlashSaleBanner from './ui/FlashSaleBanner';
 import CategorySkeleton from '../loader/CategorySkeleton';
@@ -7,6 +8,8 @@ import { getFeaturedCategories } from '../services/api';
 
 // ট্র্যাকের অর্ধেক অংশ যেন কন্টেইনারের চেয়ে চওড়া থাকে, তাই কম ক্যাটাগরি হলে লিস্টটা বারবার রিপিট করা হয়
 const MIN_ITEMS_PER_HALF = 24;
+
+const MotionLink = motion.create(Link);
 
 export default function CategoryAndBanner() {
   const [categories, setCategories] = useState(null);
@@ -96,9 +99,9 @@ export default function CategoryAndBanner() {
             }}
           >
             {loopedCategories.map((cat, index) => (
-              <motion.a
+              <MotionLink
                 key={`${cat.id}-${index}`}
-                href={`#${cat.slug}`}
+                to={`/shop-page?category=${cat.slug}`}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 className="flex flex-col items-center shrink-0 group cursor-pointer"
@@ -115,7 +118,7 @@ export default function CategoryAndBanner() {
                 <span className="text-xs sm:text-sm font-medium text-neutral-800 group-hover:text-[#C8795A] transition-colors text-center">
                   {cat.name}
                 </span>
-              </motion.a>
+              </MotionLink>
             ))}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link } from "react-router-dom";
 import { Zap, Moon, Star } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -203,8 +204,8 @@ const FlashSaleBanner = ({
           </div>
 
           {/* View All Button */}
-          <a
-            href="#flash-sale"
+          <Link
+            to="/online-sale"
             className="relative overflow-hidden shrink-0 whitespace-nowrap bg-gradient-to-r from-[#F5D78E] to-[#E7C9A0] text-neutral-900 hover:brightness-105 px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md shadow-[#F5D78E]/20 flex items-center gap-2 group"
           >
             <span className="relative z-10">View all</span>
@@ -215,7 +216,7 @@ const FlashSaleBanner = ({
                 transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
               />
             )}
-          </a>
+          </Link>
         </div>
       </div>
     </div>

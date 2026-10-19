@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaBolt } from 'react-icons/fa';
 import { FaBagShopping, FaCartPlus } from 'react-icons/fa6'; 
 
@@ -137,12 +138,12 @@ export default function HijabSection() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-black tracking-tight">Georgette</h2>
-        <a
-          href="#"
+        <Link
+          to="/shop-page"
           className="text-lg font-bold text-black hover:opacity-75 transition-opacity"
         >
           View All
-        </a>
+        </Link>
       </div>
 
       {/* Product Grid */}

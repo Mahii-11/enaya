@@ -6,11 +6,10 @@ import { Label } from "../components/ui/lebel";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Button } from "../components/ui/button";
 import { useState } from "react";
-import { createOrder, getUserOrders } from "../services/api";
+import { createOrder } from "../services/api";
 import { useDispatch } from "react-redux";
 import { clearCart } from "../cart/cartSlice";
-import { useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 //import { Navigate } from "react-router-dom";
 
 
@@ -20,14 +19,14 @@ import { useLocation } from "react-router-dom";
 
 
 export default function CheckoutPage() {
-  const location = useLocation();
-  const buyNowItem = location.state?.item;
   const navigate = useNavigate();
+  const location = useLocation();
+  // Buy Now: কার্টে না ঢুকিয়ে সরাসরি এই আইটেম নিয়ে চেকআউট
+  const buyNowItem = location.state?.buyNowItem;
   const reduxCartItems = useSelector(getCart);
+  const reduxSubtotal = useSelector(getTotalCartPrice);
   const cartItems = buyNowItem ? [buyNowItem] : reduxCartItems;
-  const subtotal = buyNowItem
-  ? buyNowItem.unit_price * buyNowItem.quantity
-  : useSelector(getTotalCartPrice);
+  const subtotal = buyNowItem ? buyNowItem.totalPrice : reduxSubtotal;
   const dispatch = useDispatch();
   const [deliveryType, setDeliveryType] = useState("inside");
   const deliveryFee = deliveryType === "inside" ? 60 : 120;
@@ -92,94 +91,38 @@ const handleOrderSubmit = async () => {
       },
     });
 
-    const data = new FormData();
-    data.append("shipping_name", formData.shipping_name);
-    data.append("order_phone", formData.order_phone);
-    data.append("shipping_address", formData.shipping_address);
-    data.append("product_qty", cartItems.reduce((sum, item) => sum + item.quantity, 0));
-    data.append("total_amount", total); 
-    data.append("shipping_cost", deliveryFee);
-    data.append("shipping_method", deliveryType === "inside" ? 21 : 22);
-    data.append("payment_method", 1);
+    // shipping_method: 21 = Inside Dhaka, 22 = Outside Dhaka (ফি সার্ভার হিসাব করে)
+    const payload = {
+      name: formData.shipping_name.trim(),
+      phone: formData.order_phone.trim(),
+      address: formData.shipping_address.trim(),
+      shipping_method: deliveryType === "inside" ? 21 : 22,
+      items: cartItems.map((product) => ({
+        product_id: product.id,
+        quantity: product.quantity,
+        // size/color না থাকলে ফিল্ড পাঠানো হয় না (খালি string integer validation-এ আটকাবে)
+        ...(product.size_id ? { size_id: Number(product.size_id) } : {}),
+        ...(product.color_id ? { color_id: Number(product.color_id) } : {}),
+      })),
+    };
 
-     cartItems.forEach((product, index) => {
-      data.append(`product_data[${index}][product_id]`, product.product_id || product.id);
-      data.append(`product_data[${index}][unit_price]`, product.unit_price);
-      data.append(`product_data[${index}][qty]`, product.quantity);
-      data.append(`product_data[${index}][variation_color_id]`, product.color_name);
-      data.append(`product_data[${index}][variation]`, product.variation_size);
-      data.append(`product_data[${index}][size_id]`, product.size_id);
-      data.append(`product_data[${index}][color_id]`, product.color_id);
-     // data.append(`product_data[${index}][product_image]`, product.image);
-      data.append(`product_data[${index}][product_image]`,product.image.split("/").pop());
-      data.append(`product_data[${index}][product_name]`, product.product_name);
-    });
+    const result = await createOrder(payload);
 
-    // 🔹 Debug: FormData entries check
-    console.log("===== FormData Entries =====");
-   for (let [key, value] of data.entries()) {
-   console.log(key, value);
-   }
-    console.log("============================");
-
-    const result = await createOrder(data);
-
-     console.log("Order Result:", result);
-
-if (result.success) {
-  Swal.fire({
-  icon: "success",
-  title: "Order Placed 🎉",
-  html: "Your order has been confirmed successfully.",
-  confirmButtonColor: "#16a34a",
-  width: "300px",
-  padding: "1.2rem",
-  customClass: {
-    popup: "rounded-xl",
-    title: "text-base font-semibold",
-    htmlContainer: "text-sm text-gray-600",
-    confirmButton: "text-sm px-5 py-2"
-  }
-}).then(async () => {
-      if (!buyNowItem) {
-      dispatch(clearCart());
-    }
-    try {
-      // 🔥 fetch all orders again
-      const res = await getUserOrders();
-
-      const ordersArray = res?.data?.data || res?.data || [];
-
-      // 🔥 latest order (newly created)
-      const latestOrder = ordersArray[0]; 
-      // (if API returns newest first)
-
-      navigate("/thank-you", {
-        state: {
-          order: latestOrder
-        }
+    if (!result.status) {
+      Swal.fire({
+        icon: "error",
+        title: "Order Failed",
+        text: result.msg || "Order creation failed!",
+        confirmButtonColor: "#dc2626",
       });
-
-    } catch (err) {
-      console.log(err);
-
-      // fallback
-      navigate("/thank-you", {
-        state: { order: null }
-      });
+      return;
     }
-  });
 
+    Swal.close();
 
-
-} else {
-  Swal.fire({
-    icon: "error",
-    title: "Order Failed ❌",
-    text: result.msg || "Order creation failed!",
-  });
-}
-
+    // আগে thank-you পেজে যাই, তারপর কার্ট খালি করি (নইলে খালি কার্টের মেসেজ এক ঝলক দেখা যায়)
+    navigate("/thank-you", { state: { order: result.data } });
+    if (!buyNowItem) dispatch(clearCart());
   } catch (error) {
      console.error("Error in createOrder:", error);
      Swal.fire({
@@ -194,12 +137,8 @@ if (result.success) {
 };
 
 
-  const hasCartItems = reduxCartItems.length > 0;
-   const hasBuyNowItem = !!buyNowItem;
-
-
 // 🔥 BLOCK ACCESS IF NOTHING EXISTS
-if (!hasCartItems && !hasBuyNowItem) {
+if (cartItems.length === 0) {
   return (
     <div className="text-center py-32">
       <h2 className="text-xl font-semibold">No checkout session found</h2>
@@ -304,12 +243,12 @@ if (!hasCartItems && !hasBuyNowItem) {
             <div className="flex flex-col gap-4 mb-4 max-h-[300px] overflow-y-auto pr-2">
               {cartItems.map((product) => (
                 <div
-                  key={product.product_slug}
+                  key={`${product.slug}-${product.variant_id}`}
                   className="flex items-start gap-3"
                 >
                   <img
                     src={product.image || "/images/motorola.png"}
-                    alt={product.product_name}
+                    alt={product.name}
                     className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -319,18 +258,24 @@ if (!hasCartItems && !hasBuyNowItem) {
 
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm sm:text-base truncate">
-                      {product.product_name}
+                      {product.name}
                     </p>
 
                     <p className="text-gray-500 text-xs sm:text-sm">
                       Qty: {product.quantity}
                     </p>
-                    <div className="text-muted-foreground text-xs sm:text-sm mt-0.5 flex flex-wrap gap-2">
-                      {product.variation_size && <span>Size: {product.variation_size}</span>}
-                      {product.color_name && <span>Color: {product.color_name}</span>}
-                     </div>
+                    {(product.size_name || product.color_name) && (
+                      <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+                        {[
+                          product.size_name && `Size: ${product.size_name}`,
+                          product.color_name && `Color: ${product.color_name}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" | ")}
+                      </p>
+                    )}
                     <p className="text-red-500 font-semibold text-sm sm:text-base">
-                      ৳{(product.quantity * product.discount_price).toFixed(2)}
+                      ৳{product.totalPrice.toFixed(2)}
                     </p>
                   </div>
                 </div>
