@@ -80,7 +80,7 @@ export function SlideCard({
         Tablet / desktop: ager moto 1600:510 ratio.
       */}
       <div
-        className="relative w-full rounded-[16px] overflow-hidden flex items-center justify-center shadow-lg aspect-[1600/510] max-sm:aspect-[2/1]"
+        className="relative w-full rounded-[16px] overflow-hidden flex items-center justify-center shadow-lg aspect-[1920/500] max-sm:aspect-[2/1]"
         style={{ width: `${slideWidth}px` }}
       >
         {slide.mediaType === 'video' ? (

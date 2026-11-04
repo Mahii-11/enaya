@@ -16,7 +16,7 @@ export default function HeroSliderSkeleton() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="relative shrink-0 overflow-hidden rounded-[16px] bg-gray-200/80 shadow-lg w-[96%] sm:w-[86%] lg:w-[84%] aspect-[1600/510] max-sm:aspect-[2/1]"
+              className="relative shrink-0 overflow-hidden rounded-[16px] bg-gray-200/80 shadow-lg w-[96%] sm:w-[86%] lg:w-[84%] aspect-[1920/500] max-sm:aspect-[2/1]"
             >
               <div
                 className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent"

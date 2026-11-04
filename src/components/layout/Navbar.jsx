@@ -114,8 +114,8 @@ export default function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-[#FAF7F5] border-b transition-shadow duration-300 ${
-        isScrolled ? 'shadow-sm border-[#F0EAE4]' : 'border-[#F0EAE4]/80'
+      className={`sticky top-0 z-50 bg-[#FAF7F5] transition-shadow duration-300 ${
+        isScrolled ? 'shadow-sm' : ''
       }`}
     >
       <nav
@@ -175,9 +175,9 @@ export default function Navbar() {
                           key={subItem.name}
                           to={subItem.to}
                           onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm text-[#E7C9A0]/80 hover:text-white hover:bg-white/10 transition-colors group/child"
+                          className="flex items-center justify-between px-4 py-2.5 text-sm text-black hover:text-black hover:bg-white/10 transition-colors group/child"
                         >
-                          <UnderlineLink className="text-[#E7C9A0]/80 group-hover/child:text-white transition-colors">
+                          <UnderlineLink className="text-black group-hover/child:text-black transition-colors">
                             {subItem.name}
                           </UnderlineLink>
                           {subItem.badge && (

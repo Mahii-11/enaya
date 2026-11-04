@@ -4,18 +4,19 @@ import { Flame } from 'lucide-react';
 /*
  * Special / promo menu bar – main navbar-er thik niche boshe.
  * Notun link add korte shudhu ei array-te ekta object add korun.
+ *   dark: true       -> black text (default: white)
  *   highlight: true  -> accent pill (Clovia-r "MEN'S / EXCLUSIVE" er moto)
  *   icon             -> optional lucide icon
  */
 const SPECIAL_LINKS = [
   { label: 'Flash Sale', to: '/online-sale', highlight: true, icon: Flame },
-  { label: 'Wholesale', to: '/shop-page?type=wholesale' },
-  { label: 'Discount', to: '/shop-page?type=discount' },
-  { label: 'New Arrivals', to: '/shop-page?sort=new' },
-  { label: 'Best Sellers', to: '/shop-page?sort=best' },
-  { label: 'Combo @999', to: '/shop-page?type=combo' },
+  { label: 'Wholesale', to: '/shop-page?type=wholesale', dark: true },
+  { label: 'Discount', to: '/shop-page?type=discount', dark: true },
+  { label: 'New Arrivals', to: '/shop-page?sort=new', dark: true },
+  { label: 'Best Sellers', to: '/shop-page?sort=best', dark: true },
+  { label: 'Combo @999', to: '/shop-page?type=combo', dark: true },
   { label: 'Exclusive Offer', to: '/shop-page?type=exclusive', highlight: true },
-  { label: 'Our Stores', to: '/our-location' },
+  { label: 'Our Stores', to: '/our-location', dark: true },
 ];
 
 // Pathname + link-er shob query param mille active dhora hobe
@@ -32,13 +33,13 @@ export default function SpecialMenuBar() {
   const location = useLocation();
 
   return (
-    <div className="bg-[#e89a7b]">
+    <div className="bg-black">
       <nav
         aria-label="Special offers"
         className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12"
       >
         <ul className="flex items-center gap-1 sm:gap-2 h-11 overflow-x-auto no-scrollbar whitespace-nowrap lg:justify-center">
-          {SPECIAL_LINKS.map(({ label, to, highlight, icon: Icon }) => {
+          {SPECIAL_LINKS.map(({ label, to, highlight, dark, icon: Icon }) => {
             const active = isLinkActive(to, location);
 
             const base =
@@ -48,11 +49,11 @@ export default function SpecialMenuBar() {
               ? `rounded-full ${
                   active
                     ? 'bg-[#FFF5F5] text-black'
-                    : 'bg-[#FFF5F5] hover:bg-[#FCF8F8] text-[#EF6905]'
+                    : 'bg-[#FFF5F5] hover:bg-white text-[#EF6905]'
                 }`
               : active
-                ? 'text-[#E7C9A0]'
-                : 'text-white';
+                ? 'text-white'
+                : 'text-[#e89a7b] hover:text-white';
 
             return (
               <li key={label} className="shrink-0">

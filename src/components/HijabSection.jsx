@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaBolt } from 'react-icons/fa';
-import { FaBagShopping, FaCartPlus } from 'react-icons/fa6'; 
+import ProductCard from './ProductCard';
 
 const productsData = [
   {
@@ -52,85 +51,15 @@ const productsData = [
   
 ];
 
-const ProductCard = ({ product }) => {
-  return (
-    <div className="relative bg-white border border-gray-200 rounded-[8px] overflow-hidden flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow">
-      
-      {/* Top Image Box */}
-      <div className="relative w-full h-64 sm:h-72 md:h-80 overflow-hidden">
-          {product?.discount && (
-    <div 
-      className="absolute top-0 left-0 bg-[#C8795A] text-white text-[8px] sm:text-[9px] font-bold uppercase z-10 shadow-sm pl-2 pr-4 py-0.5 tracking-wider"
-     
-    >
-      {product.discount}
-    </div>
-  )}
-
-        <img
-          src={product.image}
-          alt={product.title}
-          className="w-full h-full object-cover block hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-
-      {/* Card Content */}
-          <div className="p-3.5 flex flex-col flex-grow justify-between">
-            <div>
-              <h3 className="text-gray-900 text-xs font-semibold line-clamp-1 mb-2">
-                {product.title}
-              </h3>
-    
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-black font-extrabold text-base sm:text-lg">
-                  ৳{product.currentPrice}
-                </span>
-                <span className="text-[#C8795A] line-through text-xs font-semibold">
-                  ৳{product.originalPrice}
-                </span>
-              </div>
-            </div>
-    
-          {/* Action Buttons Section */}
-<div className={`grid ${true ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'} gap-1.5 w-full pt-1`}>
-  {/* Buy Now Button: Phone view-ete (md er niche) hide thakbe, md ba tar upore show korbe */}
-  <button
-    type="button"
-    title="Buy Now"
-    onClick={() => onBuyNow?.(product)}
-    className="hidden md:flex relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md items-center justify-center gap-1 transition-colors duration-300 leading-tight"
-  >
-    {/* Left to Right Liquid Fill Effect */}
-    <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-in-out"></span>
-
-    {/* Button Content (Icon and Text stay on top) */}
-    <FaBolt className="text-sm shrink-0 relative z-10 transition-colors duration-300" />
-    <span className="hidden md:inline text-[10px] xl:text-[11px] whitespace-nowrap relative z-10 transition-colors duration-300">
-      Buy Now
-    </span>
-  </button>
-
-  {/* Add to Cart Button: Phone view-ete shob somoy thakbe ebong single thakle full width nibe */}
-  <button
-    type="button"
-    title="Add to Cart"
-    onClick={() => onAddToCart?.(product)}
-    className="col-span-1 md:col-span-auto relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-colors duration-300 leading-tight"
-  >
-    {/* Left to Right Liquid Fill Effect */}
-    <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-in-out"></span>
-
-    {/* Button Content (Icon and Text stay on top) */}
-    <FaCartPlus className="text-sm shrink-0 relative z-10 transition-colors duration-300" />
-    <span className=" text-[10px] xl:text-[11px] whitespace-nowrap relative z-10 transition-colors duration-300">
-      Add to Cart
-    </span>
-  </button>
-</div>
-          </div>
-    </div>
-  );
-};
+// স্ট্যাটিক ডাটাকে শেয়ার্ড ProductCard-এর শেপে বদলায় (slug নেই, তাই কার্ড লিংক ছাড়া থাকে)
+const toCardProduct = (item) => ({
+  id: item.id,
+  name: item.title,
+  image: item.image,
+  offer_price: item.currentPrice,
+  price: item.originalPrice,
+  discount_percent: parseInt(item.discount, 10) || 0,
+});
 
 export default function HijabSection() {
   return (
@@ -149,7 +78,7 @@ export default function HijabSection() {
       {/* Product Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {productsData.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={toCardProduct(product)} />
         ))}
       </div>
     </section>

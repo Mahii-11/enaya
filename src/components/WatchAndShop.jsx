@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaBolt, FaCartPlus } from "react-icons/fa";
+import { FaBolt, FaCartPlus } from "react-icons/fa6";
 import { getWatchShopProducts } from "../services/api";
 import WatchShopSkeleton from "../loader/WatchShopSkeleton";
 import { getPriceInfo } from "../utils/productPrice";
@@ -136,7 +136,7 @@ const VideoProductCard = ({ product, rootRef, onBuyNow, onAddToCart, isClone = f
   const tabIndex = isClone ? -1 : undefined;
 
   return (
-    <div className="relative bg-white border border-gray-200 rounded-[8px] overflow-hidden flex flex-col justify-between w-full shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 flex flex-col w-full">
       {/* Top Video Box (`group` drives the hover zoom, since the wrapper below ignores the mouse) */}
       <Link
         to={detailsPath}
@@ -177,63 +177,45 @@ const VideoProductCard = ({ product, rootRef, onBuyNow, onAddToCart, isClone = f
         </div>
       </Link>
 
-      {/* Card Content */}
-      <div className="p-3.5 flex flex-col flex-grow justify-between">
-        <div>
-          <Link to={detailsPath} tabIndex={tabIndex}>
-            <h3 className="text-gray-900 text-xs font-semibold line-clamp-1 mb-2">
-              {product.name}
-            </h3>
-          </Link>
+      {/* Card Content (Shop page-এর কার্ডের মতো) */}
+      <div className="p-4 flex flex-col flex-1">
+        <Link to={detailsPath} tabIndex={tabIndex}>
+          <h4
+            className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]"
+            title={product.name}
+          >
+            {product.name}
+          </h4>
+        </Link>
 
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-black font-extrabold text-base sm:text-lg">
-              {current}
-            </span>
-            {original && (
-              <span className="text-[#C8795A] line-through text-xs font-semibold">
-                {original}
-              </span>
-            )}
-          </div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="font-extrabold text-gray-900">{current}</span>
+          {original && <span className="text-sm text-[#C8795A] line-through">{original}</span>}
         </div>
 
-        {/* Action Buttons Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 w-full pt-1">
-          {/* Buy Now Button: Phone view-ete (md er niche) hide thakbe, md ba tar upore show korbe */}
+        <div className="mt-auto grid grid-cols-2 gap-2">
           <button
             type="button"
             title="Buy Now"
             onClick={() => onBuyNow(product)}
             tabIndex={tabIndex}
-            className="hidden md:flex relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md items-center justify-center gap-1 transition-colors duration-300 leading-tight"
+            className="relative overflow-hidden group/btn bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md flex items-center justify-center gap-1.5 transition-colors duration-300"
           >
-            {/* Left to Right Liquid Fill Effect */}
-            <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-in-out"></span>
-
-            {/* Button Content (Icon and Text stay on top) */}
-            <FaBolt className="text-sm shrink-0 relative z-10 transition-colors duration-300" />
-            <span className="hidden md:inline text-[10px] xl:text-[11px] whitespace-nowrap relative z-10 transition-colors duration-300">
-              Buy Now
-            </span>
+            <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500 ease-in-out" />
+            <FaBolt className="text-xs shrink-0 relative z-10" />
+            <span className="text-[8px] sm:text-[11px] font-bold whitespace-nowrap relative z-10">Buy Now</span>
           </button>
 
-          {/* Add to Cart Button: Phone view-ete shob somoy thakbe ebong single thakle full width nibe */}
           <button
             type="button"
             title="Add to Cart"
             onClick={() => onAddToCart(product)}
             tabIndex={tabIndex}
-            className="col-span-1 relative overflow-hidden group bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md flex items-center justify-center gap-1 transition-colors duration-300 leading-tight"
+            className="relative overflow-hidden group/btn bg-white border border-[#C8795A] text-[#C8795A] hover:text-white font-medium py-2 px-1 rounded-md flex items-center justify-center gap-1.5 transition-colors duration-300"
           >
-            {/* Left to Right Liquid Fill Effect */}
-            <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-in-out"></span>
-
-            {/* Button Content (Icon and Text stay on top) */}
-            <FaCartPlus className="text-sm shrink-0 relative z-10 transition-colors duration-300" />
-            <span className="text-[10px] xl:text-[11px] whitespace-nowrap relative z-10 transition-colors duration-300">
-              Add to Cart
-            </span>
+            <span className="absolute inset-0 bg-[#C8795A] -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500 ease-in-out" />
+            <FaCartPlus className="text-xs shrink-0 relative z-10" />
+            <span className="text-[8px] sm:text-[11px] font-bold whitespace-nowrap relative z-10">Add to Cart</span>
           </button>
         </div>
       </div>
