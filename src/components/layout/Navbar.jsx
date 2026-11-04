@@ -175,9 +175,9 @@ export default function Navbar() {
                           key={subItem.name}
                           to={subItem.to}
                           onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm text-black hover:text-black hover:bg-white/10 transition-colors group/child"
+                          className="flex items-center justify-between px-4 py-2.5 text-sm text-white hover:text-white hover:bg-white/10 transition-colors group/child"
                         >
-                          <UnderlineLink className="text-black group-hover/child:text-black transition-colors">
+                          <UnderlineLink className="text-white group-hover/child:text-white transition-colors">
                             {subItem.name}
                           </UnderlineLink>
                           {subItem.badge && (

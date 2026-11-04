@@ -33,7 +33,7 @@ export default function SpecialMenuBar() {
   const location = useLocation();
 
   return (
-    <div className="bg-black">
+    <div className="bg-gradient-to-b from-black/70 via-black/60 to-black/75 backdrop-blur-[2px] border-y border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
       <nav
         aria-label="Special offers"
         className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12"
