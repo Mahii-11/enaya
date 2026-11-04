@@ -17,7 +17,7 @@ export default function ProductCard({ product, onBuyNow, onAddToCart }) {
     <div className="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 flex flex-col">
       <MediaWrapper
         {...mediaProps}
-        className="relative block h-64 sm:h-72 md:h-80 overflow-hidden bg-gray-50"
+        className="relative block aspect-[2/3] overflow-hidden bg-gray-50"
       >
         {discount && (
           <div className="absolute top-0 left-0 bg-[#C8795A] text-white text-[10px] font-bold uppercase z-10 shadow-sm pl-2.5 pr-4 py-1 tracking-wider">
