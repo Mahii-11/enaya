@@ -14,6 +14,7 @@ import {
   Plus,
   Ruler,
   X,
+  MessageCircle,
 } from 'lucide-react';
 import { getProductDetails } from '../services/api';
 import { addItem, createCartLine, openCartPopup } from '../cart/cartSlice';
@@ -24,6 +25,26 @@ import SelectOptionsPopup from '../components/SelectOptionsPopup';
 import ProductDetailsSkeleton from '../loader/ProductDetailsSkeleton';
 
 const WHATSAPP_NUMBER = '8809613820026';
+const MESSENGER_URL = 'https://m.me/'; // TODO: পেজের username বসান, যেমন https://m.me/yourpage
+
+// API-তে size/color না থাকলে আগের ডিজাইনের মতো এগুলো দেখানো হয় (শুধু ডিসপ্লে, কার্টে যায় না)
+const FALLBACK_SIZES = ['S', 'M', 'L', 'XL', 'XXL'].map((name) => ({ id: `static-${name}`, name }));
+const FALLBACK_COLORS = [
+  { id: 'static-black', name: 'Black', code: '#000000' },
+  { id: 'static-navy', name: 'Navy', code: '#1e3a8a' },
+  { id: 'static-purple', name: 'Purple', code: '#5b21b6' },
+  { id: 'static-pink', name: 'Pink', code: '#db2777' },
+  { id: 'static-green', name: 'Green', code: '#065f46' },
+];
+
+// API-তে description না থাকলে আগের static বুলেট পয়েন্ট
+const FALLBACK_DETAILS = [
+  'সুপার সফট ও স্ট্রেচেবল ফেব্রিক',
+  'ঘাম শোষণ করে ও দ্রুত শুকায়',
+  'জিম, যোগা, রানিং ও দৈনন্দিন ব্যবহারের জন্য পারফেক্ট',
+  'দীর্ঘক্ষণ ব্যবহারেও আরামদায়ক',
+  'বাংলাদেশের আবহাওয়ার জন্য উপযুক্ত',
+];
 
 const getYouTubeThumb = (embedUrl) => {
   const id = embedUrl?.match(/embed\/([\w-]{11})/)?.[1];
@@ -276,6 +297,9 @@ function ProductDetailsContent({ product }) {
 
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
+  // API-তে size/color না থাকলে static ফলব্যাকের সিলেকশন (শুধু ভিজ্যুয়াল)
+  const [staticSize, setStaticSize] = useState(FALLBACK_SIZES[1]);
+  const [staticColor, setStaticColor] = useState(FALLBACK_COLORS[0]);
   const [selectedMedia, setSelectedMedia] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('details');
@@ -428,6 +452,11 @@ function ProductDetailsContent({ product }) {
     `Interested in ${product.name}`
   )}`;
 
+  const sizeList = needsSize ? sizes : FALLBACK_SIZES;
+  const colorList = needsColor ? colors : FALLBACK_COLORS;
+  const shownSize = needsSize ? selectedSize : staticSize;
+  const shownColor = needsColor ? selectedColor : staticColor;
+
   const active = media[selectedMedia] || media[0];
   const canBuy = product.in_stock;
 
@@ -546,45 +575,26 @@ function ProductDetailsContent({ product }) {
             </div>
 
             {/* Size Selector */}
-            {needsSize && (
+            {
               <div
                 ref={sizeRef}
                 className={`mb-5 rounded-xl transition-colors ${
                   error?.field === 'size' ? 'ring-2 ring-red-400 bg-red-50/60 p-3 -m-3 mb-2' : ''
                 }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3 max-w-md">
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Available Sizes
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomSizeOpen(true)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#C8795A]/50 text-[#C8795A] bg-[#C8795A]/10 hover:bg-[#C8795A]/20 flex items-center gap-1 transition-all"
-                    >
-                      <Ruler className="w-3.5 h-3.5" />
-                      Custom Size
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsSizeChartOpen(true)}
-                      className="text-xs text-[#C8795A] font-bold underline hover:opacity-80 transition-opacity"
-                    >
-                      Size Chart
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {sizes.map((size) => {
-                    const available = isSizeAvailable(size);
-                    const isSelected = selectedSize && sameId(selectedSize.id, size.id);
+                <span className="block mb-3 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Available Sizes
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {sizeList.map((size) => {
+                    const available = needsSize ? isSizeAvailable(size) : true;
+                    const isSelected = shownSize && sameId(shownSize.id, size.id);
                     return (
                       <button
                         key={size.id}
                         type="button"
                         disabled={!available}
-                        onClick={() => handleSizeSelect(size)}
+                        onClick={() => (needsSize ? handleSizeSelect(size) : setStaticSize(size))}
                         title={available ? size.name : `${size.name} - Out of stock`}
                         className={`min-w-10 h-10 px-2 text-xs font-semibold rounded-lg border transition-all ${
                           !available
@@ -598,6 +608,21 @@ function ProductDetailsContent({ product }) {
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomSizeOpen(true)}
+                    className="px-3 h-10 text-xs font-semibold rounded-lg border border-[#C8795A]/50 text-[#C8795A] bg-[#C8795A]/10 hover:bg-[#C8795A]/20 flex items-center gap-1 transition-all"
+                  >
+                    <Ruler className="w-3.5 h-3.5" />
+                    Custom Size
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeChartOpen(true)}
+                    className="text-xs text-[#C8795A] font-bold underline hover:opacity-80 transition-opacity"
+                  >
+                    Size Chart
+                  </button>
                 </div>
                 {error?.field === 'size' && (
                   <p role="alert" className="mt-2 text-xs font-semibold text-red-600">
@@ -605,10 +630,10 @@ function ProductDetailsContent({ product }) {
                   </p>
                 )}
               </div>
-            )}
+            }
 
             {/* Color Selector */}
-            {needsColor && (
+            {
               <div
                 ref={colorRef}
                 className={`mb-6 rounded-xl transition-colors ${
@@ -616,18 +641,18 @@ function ProductDetailsContent({ product }) {
                 }`}
               >
                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
-                  Colors{selectedColor ? `: ${selectedColor.name}` : ''}
+                  Colors{needsColor && selectedColor ? `: ${selectedColor.name}` : ''}
                 </span>
                 <div className="flex gap-3">
-                  {colors.map((color) => {
-                    const available = isColorAvailable(color);
-                    const isSelected = selectedColor && sameId(selectedColor.id, color.id);
+                  {colorList.map((color) => {
+                    const available = needsColor ? isColorAvailable(color) : true;
+                    const isSelected = shownColor && sameId(shownColor.id, color.id);
                     return (
                       <button
                         key={color.id}
                         type="button"
                         disabled={!available}
-                        onClick={() => handleColorSelect(color)}
+                        onClick={() => (needsColor ? handleColorSelect(color) : setStaticColor(color))}
                         style={{ backgroundColor: color.code || color.name }}
                         title={available ? color.name : `${color.name} - Out of stock`}
                         aria-label={color.name}
@@ -644,7 +669,7 @@ function ProductDetailsContent({ product }) {
                   </p>
                 )}
               </div>
-            )}
+            }
           </div>
 
           <div>
@@ -706,6 +731,14 @@ function ProductDetailsContent({ product }) {
               >
                 Order by Whatsapp
               </a>
+              <a
+                href={MESSENGER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-3 border border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-all"
+              >
+                <MessageCircle className="w-4 h-4" /> Messenger এ কথা বলুন
+              </a>
             </div>
           </div>
         </div>
@@ -759,12 +792,21 @@ function ProductDetailsContent({ product }) {
           ))}
         </div>
 
-        {activeTab === 'details' && (
+        {activeTab === 'details' && !product.description && !product.short_description && (
+          <ul className="space-y-2 text-xs text-gray-700">
+            {FALLBACK_DETAILS.map((line) => (
+              <li key={line} className="flex items-center gap-2">
+                <span className="text-[#C8795A]">✔</span> {line}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {activeTab === 'details' && (product.description || product.short_description) && (
           <div
             className="prose prose-sm max-w-none text-xs text-gray-700 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_h3]:font-bold [&_h3]:mt-3 [&_h3]:mb-1"
             dangerouslySetInnerHTML={{
-              __html:
-                product.description || product.short_description || 'No product description available.',
+              __html: product.description || product.short_description,
             }}
           />
         )}
@@ -811,7 +853,7 @@ function ProductDetailsContent({ product }) {
 
       {isSizeChartOpen && <SizeChartModal onClose={() => setIsSizeChartOpen(false)} />}
       {isCustomSizeOpen && (
-        <CustomSizeModal colors={colors} onClose={() => setIsCustomSizeOpen(false)} />
+        <CustomSizeModal colors={colorList} onClose={() => setIsCustomSizeOpen(false)} />
       )}
     </div>
   );
