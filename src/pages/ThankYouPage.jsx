@@ -8,6 +8,17 @@ export default function ThankYouPage() {
   // /checkout API response-এর data: { id, invoice_no, total, thank_you_url, summary }
   const order = location?.state?.order;
   const summary = order?.summary;
+  const sentItems = location?.state?.sentItems || [];
+
+  // Custom order-এর দাম দেখানো হয় না (checkout পেজের মতো)
+  const hasCustomItem = sentItems.some((item) => item.is_custom);
+  const sameVariant = (a, b) =>
+    ["product_id", "size_id", "color_id"].every((key) => String(a[key] || "") === String(b[key] || ""));
+  // একই প্রোডাক্ট normal হিসেবেও থাকলে শুধু normal লাইনের দাম দেখায়
+  const isCustomItem = (item) =>
+    Boolean(Number(item.is_custom)) ||
+    (sentItems.some((s) => s.is_custom && String(s.product_id) === String(item.product_id)) &&
+      !sentItems.some((s) => !s.is_custom && sameVariant(s, item)));
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
@@ -64,20 +75,26 @@ export default function ThankYouPage() {
                       </p>
                     )}
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {item.quantity} × {formatPrice(item.unit_price)}
+                      {isCustomItem(item)
+                        ? `Custom order | Qty: ${item.quantity}`
+                        : `${item.quantity} × ${formatPrice(item.unit_price)}`}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">{formatPrice(item.line_total)}</span>
+                  {!isCustomItem(item) && (
+                    <span className="text-sm font-semibold text-gray-800">{formatPrice(item.line_total)}</span>
+                  )}
                 </li>
               ))}
             </ul>
 
             <dl className="mt-4 space-y-1.5 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <dt>Subtotal</dt>
-                <dd>{formatPrice(summary.subtotal)}</dd>
-              </div>
-              {summary.coupon_discount > 0 && (
+              {!hasCustomItem && (
+                <div className="flex justify-between text-gray-600">
+                  <dt>Subtotal</dt>
+                  <dd>{formatPrice(summary.subtotal)}</dd>
+                </div>
+              )}
+              {!hasCustomItem && summary.coupon_discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <dt>Coupon{summary.coupon_code ? ` (${summary.coupon_code})` : ""}</dt>
                   <dd>-{formatPrice(summary.coupon_discount)}</dd>
@@ -87,11 +104,18 @@ export default function ThankYouPage() {
                 <dt>Delivery{summary.shipping_method?.name ? ` (${summary.shipping_method.name})` : ""}</dt>
                 <dd>{formatPrice(summary.shipping_fee)}</dd>
               </div>
-              <div className="flex justify-between border-t pt-2 text-base font-bold text-gray-900">
-                <dt>Total</dt>
-                <dd>{formatPrice(summary.total ?? order.total)}</dd>
-              </div>
+              {!hasCustomItem && (
+                <div className="flex justify-between border-t pt-2 text-base font-bold text-gray-900">
+                  <dt>Total</dt>
+                  <dd>{formatPrice(summary.total ?? order.total)}</dd>
+                </div>
+              )}
             </dl>
+            {hasCustomItem && (
+              <p className="mt-3 border-t pt-3 text-sm text-gray-600">
+                Custom order-এর দাম আমরা ফোনে জানিয়ে অর্ডার কনফার্ম করবো।
+              </p>
+            )}
           </div>
         )}
 
@@ -110,7 +134,8 @@ export default function ThankYouPage() {
             Continue Shopping
           </Link>
 
-          {order?.thank_you_url && (
+          {/* backend-এর order পেজে দাম দেখা যায়, তাই custom order-এ লিংক লুকানো */}
+          {order?.thank_you_url && !hasCustomItem && (
             <a
               href={order.thank_you_url}
               target="_blank"

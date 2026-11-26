@@ -39,30 +39,8 @@ export default function CategoryAndBanner() {
     return [...half, ...half];
   }, [categories]);
 
-  // ফ্ল্যাশ সেল অন/অফ করার স্টেট (True থাকলে দেখাবে, False হলে হাইড হয়ে যাবে)
-  const [showFlashSale, setShowFlashSale] = useState(true);
-
   // হোভার করলে স্লাইড পজ হবে, কার্সর সরালে আবার স্মুথলি কন্টিনিউ করবে
   const [isPaused, setIsPaused] = useState(false);
-
-  // লাইভ কাউন্টডাউন টাইমার লজিক (Hours, Minutes, Seconds)
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 59, seconds: 28 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        }
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-8 space-y-10">
@@ -145,7 +123,7 @@ export default function CategoryAndBanner() {
       </div>
       )}
 
-      {showFlashSale && <FlashSaleBanner timeLeft={timeLeft} />}
+      <FlashSaleBanner />
 
     </section>
   );

@@ -9,7 +9,7 @@ import { Flame } from 'lucide-react';
  *   icon             -> optional lucide icon
  */
 const SPECIAL_LINKS = [
-  { label: 'Flash Sale', to: '/online-sale', highlight: true, icon: Flame },
+  { label: 'Flash Sale', to: '/flash-sale',highlight: true, icon: Flame },
   { label: 'Wholesale', to: '/shop-page?type=wholesale', dark: true },
   { label: 'Discount', to: '/shop-page?type=discount', dark: true },
   { label: 'New Arrivals', to: '/shop-page?sort=new', dark: true },

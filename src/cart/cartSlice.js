@@ -39,6 +39,8 @@ export const createCartLine = (newItem) => {
     color_id: newItem.color_id || newItem.selectedColor?.id || newItem.color?.id || "",
     size_name: newItem.selectedSize?.name || newItem.size?.name || newItem.size_name || "",
     color_name: newItem.selectedColor?.name || newItem.color?.name || newItem.color_name || "",
+    // custom order হলে মাপগুলো, checkout-এ API-তে যায়
+    ...(newItem.custom ? { custom: newItem.custom } : {}),
   };
 };
 

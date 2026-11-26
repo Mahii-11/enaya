@@ -1,11 +1,15 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Zap, Moon, Star } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { getFlashSale } from "../../services/api";
 
 /*
   Usage (in your parent component):
-    {showFlashSale && <FlashSaleBanner timeLeft={timeLeft} />}
+    <FlashSaleBanner />
+
+  Data `flash-sale-data` API theke ashe. Sale bondho thakle, time shesh hole
+  ba fetch fail korle banner-ta dekhabe na.
 
   Breakpoints:
     - below `sm` (phones): compact - smaller text, icon, timer and button,
@@ -53,16 +57,94 @@ function Lantern({ className = "", delay = 0, reduce }) {
   );
 }
 
-const FlashSaleBanner = ({
-  timeLeft = { hours: 0, minutes: 0, seconds: 0 },
-}) => {
+// "2027-01-01 18:03:00" -> timestamp. UTC dhore parse kora hoy, jate browser-er
+// timezone kono poriborton na kore (shudhu difference ar display-er jonno)
+const parseServerDate = (value) =>
+  Date.parse(`${String(value ?? "").replace(" ", "T")}Z`);
+
+// Age remaining_seconds, na thakle countdown, tao na thakle end_time - server_time
+function getRemainingSeconds({ remaining_seconds, countdown, end_time, server_time }) {
+  if (remaining_seconds != null) return Number(remaining_seconds) || 0;
+  if (countdown) {
+    const { hours = 0, minutes = 0, seconds = 0 } = countdown;
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+  return (parseServerDate(end_time) - parseServerDate(server_time)) / 1000 || 0;
+}
+
+// Server-er timezone-er somoy-tai dekhay, sathe timezone-er nam
+function formatEndTime(endTime, timezone) {
+  const time = parseServerDate(endTime);
+  if (Number.isNaN(time)) return null;
+  const text = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "UTC",
+  }).format(time);
+  return timezone ? `${text} (${timezone})` : text;
+}
+
+/*
+  Server-er `remaining_seconds` theke deadline banano hoy, tai user-er device-er
+  ghori/timezone bhul holeo countdown thik thake. Protibar deadline theke hisab
+  hoy bole background tab-eo timer pichiye jay na.
+*/
+function useFlashSale() {
+  const [sale, setSale] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer;
+
+    getFlashSale()
+      .then((data) => {
+        if (cancelled || !data?.is_running) return;
+
+        const deadline = Date.now() + getRemainingSeconds(data) * 1000;
+        const tick = () => {
+          const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+          setSecondsLeft(left);
+          if (left === 0) clearInterval(timer);
+        };
+
+        timer = setInterval(tick, 1000);
+        tick();
+        setSale(data);
+      })
+      .catch(() => {
+        /* fetch fail korle banner hidden thakbe */
+      });
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  return { sale, secondsLeft };
+}
+
+const FlashSaleBanner = ({ showViewAll = true }) => {
   const reduce = useReducedMotion();
-  const pad = (n) => String(n ?? 0).padStart(2, "0");
+  const { sale, secondsLeft } = useFlashSale();
+  const [failedImage, setFailedImage] = useState(null);
+  const pad = (n) => String(n).padStart(2, "0");
+
+  if (!sale || secondsLeft <= 0) return null;
+
+  const endsAt = formatEndTime(sale.end_time, sale.timezone);
+  const days = Math.floor(secondsLeft / 86400);
 
   const units = [
-    { value: timeLeft.hours, label: "Hrs" },
-    { value: timeLeft.minutes, label: "Min" },
-    { value: timeLeft.seconds, label: "Sec" },
+    ...(days > 0 ? [{ value: days, label: "Days" }] : []),
+    { value: Math.floor((secondsLeft % 86400) / 3600), label: "Hrs" },
+    { value: Math.floor((secondsLeft % 3600) / 60), label: "Min" },
+    { value: secondsLeft % 60, label: "Sec" },
   ];
 
   // Shine ekbar dane jay, ekbar bame ashe (mirror loop)
@@ -146,33 +228,59 @@ const FlashSaleBanner = ({
             </motion.div>
           </div>
 
+          {/* API image: load na hole hide, chhoto screen-eo jayga nei na */}
+          {sale.image && failedImage !== sale.image && (
+            <img
+              src={sale.image}
+              alt={sale.title}
+              onError={() => setFailedImage(sale.image)}
+              className="hidden sm:block shrink-0 w-24 h-24 lg:w-28 lg:h-28 object-contain"
+            />
+          )}
+
           <div className="min-w-0">
-            <div className="flex items-center justify-start sm:justify-center lg:justify-start gap-2 mb-1">
-              <span className="relative overflow-hidden whitespace-nowrap text-[9px] sm:text-[11px] font-semibold tracking-wide sm:tracking-wider uppercase px-2 sm:px-2.5 py-0.5 rounded-full bg-[#C8795A]/30 text-[#F5D78E] border border-[#F5D78E]/40">
-                ☪ EID SPECIAL • UP TO 70% OFF
-                {/* Badge-er upor diye aloh chole jay */}
-                {!reduce && (
-                  <motion.span
-                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-                    animate={{ left: ["-40%", "110%"] }}
-                    transition={{ duration: 2.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                  />
-                )}
-              </span>
-            </div>
+            {sale.badge_text && (
+              <div className="flex items-center justify-start sm:justify-center lg:justify-start gap-2 mb-1">
+                <span className="relative overflow-hidden whitespace-nowrap text-[9px] sm:text-[11px] font-semibold tracking-wide sm:tracking-wider uppercase px-2 sm:px-2.5 py-0.5 rounded-full bg-[#C8795A]/30 text-[#F5D78E] border border-[#F5D78E]/40">
+                  ☪ {sale.badge_text}
+                  {/* Badge-er upor diye aloh chole jay */}
+                  {!reduce && (
+                    <motion.span
+                      className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+                      animate={{ left: ["-40%", "110%"] }}
+                      transition={{ duration: 2.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                    />
+                  )}
+                </span>
+              </div>
+            )}
 
             <motion.h3
               className="text-lg sm:text-2xl leading-tight font-serif font-bold tracking-wide bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(245,215,142,0.35)]"
               style={{ backgroundImage: SHINE_GRADIENT, backgroundSize: "250% 100%", backgroundPosition: "100% 0%" }}
               {...shine}
             >
-              Flash Sale
+              {sale.title}
             </motion.h3>
 
-            <p className="text-[11px] leading-snug sm:text-sm sm:leading-normal text-stone-300 mt-0.5 sm:mt-1 max-w-md">
-              Celebrate Eid with premium picks at all-time-low prices. New items
-              added every hour—once they're gone, they're gone.
-            </p>
+            {sale.description && (
+              <p className="text-[11px] leading-snug sm:text-sm sm:leading-normal text-stone-300 mt-0.5 sm:mt-1 max-w-md">
+                {sale.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-start sm:justify-center lg:justify-start gap-x-3 gap-y-1 mt-1.5 sm:mt-2">
+              {Number(sale.offer_percent) > 0 && (
+                <span className="rounded-full bg-[#F5D78E] px-2.5 py-0.5 text-[10px] sm:text-xs font-bold text-neutral-900">
+                  {sale.offer_percent}% OFF
+                </span>
+              )}
+              {endsAt && (
+                <span className="text-[10px] sm:text-xs text-[#E7C9A0]">
+                  Ends {endsAt}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -204,19 +312,21 @@ const FlashSaleBanner = ({
           </div>
 
           {/* View All Button */}
-          <Link
-            to="/online-sale"
-            className="relative overflow-hidden shrink-0 whitespace-nowrap bg-gradient-to-r from-[#F5D78E] to-[#E7C9A0] text-neutral-900 hover:brightness-105 px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md shadow-[#F5D78E]/20 flex items-center gap-2 group"
-          >
-            <span className="relative z-10">View all</span>
-            {!reduce && (
-              <motion.span
-                className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent -skew-x-12"
-                animate={{ left: ["-40%", "120%"] }}
-                transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
-              />
-            )}
-          </Link>
+          {showViewAll && (
+            <Link
+              to="/flash-sale"
+              className="relative overflow-hidden shrink-0 whitespace-nowrap bg-gradient-to-r from-[#F5D78E] to-[#E7C9A0] text-neutral-900 hover:brightness-105 px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md shadow-[#F5D78E]/20 flex items-center gap-2 group"
+            >
+              <span className="relative z-10">View all</span>
+              {!reduce && (
+                <motion.span
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent -skew-x-12"
+                  animate={{ left: ["-40%", "120%"] }}
+                  transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
+                />
+              )}
+            </Link>
+          )}
         </div>
       </div>
     </div>

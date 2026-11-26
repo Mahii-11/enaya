@@ -14,8 +14,19 @@ export const getPriceInfo = (product) => {
 
   const min = Number(product.min_price);
   const max = Number(product.max_price);
+
+  // variable প্রডাক্টে discount থাকলে (flash sale) কাটা মূল দামের রেঞ্জও দেখাবে
+  const regularMin = Number(product.regular_min_price);
+  const regularMax = Number(product.regular_max_price);
+  const original =
+    min > 0 && regularMin > min
+      ? regularMax > regularMin
+        ? `${formatPrice(regularMin)} - ${formatPrice(regularMax)}`
+        : formatPrice(regularMin)
+      : null;
+
   if (min > 0 && max > min) {
-    return { current: `${formatPrice(min)} - ${formatPrice(max)}`, original: null };
+    return { current: `${formatPrice(min)} - ${formatPrice(max)}`, original };
   }
-  return { current: formatPrice(min || max || 0), original: null };
+  return { current: formatPrice(min || max || 0), original };
 };

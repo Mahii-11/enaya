@@ -72,6 +72,40 @@ export const getFeaturedCategories = async () => {
 }
 
 
+// Get Flash Sale (home banner). no-store: remaining_seconds যেন cache থেকে পুরোনো না আসে
+export const getFlashSale = async () => {
+    const res = await fetchData("flash-sale-data", { cache: "no-store" });
+    if (!res.status) {
+        throw new Error("Flash sale fetch unsuccessful");
+    }
+    return res.flash_sale || null;
+}
+
+
+// Get Flash Sale products (paginated)
+export const getFlashSaleProducts = async (page = 1) => {
+    const res = await fetchData(`flash-sale-products?page=${page}`, { cache: "no-store" });
+    if (!res.status || !Array.isArray(res.data)) {
+        throw new Error("Flash sale products fetch unsuccessful");
+    }
+    return {
+        products: res.data,
+        lastPage: res.meta?.last_page || 1,
+        isRunning: res.flash_sale?.is_running !== false,
+    };
+}
+
+
+// Get Shop page products + filter options. query: "category=women&color=red,blue&page=2"
+export const getShopProducts = async (query = "") => {
+    const res = await fetchData(`shop-products${query ? `?${query}` : ""}`);
+    if (!res.status || !Array.isArray(res.data)) {
+        throw new Error("Shop products fetch unsuccessful");
+    }
+    return { products: res.data, meta: res.meta, filters: res.filters };
+}
+
+
 // Get Home Category Sections (category banner + products)
 export const getHomeCategories = async () => {
     const res = await fetchData("home-category-data");

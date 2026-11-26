@@ -27,16 +27,6 @@ import ProductDetailsSkeleton from '../loader/ProductDetailsSkeleton';
 const WHATSAPP_NUMBER = '8809613820026';
 const MESSENGER_URL = 'https://m.me/'; // TODO: পেজের username বসান, যেমন https://m.me/yourpage
 
-// API-তে size/color না থাকলে আগের ডিজাইনের মতো এগুলো দেখানো হয় (শুধু ডিসপ্লে, কার্টে যায় না)
-const FALLBACK_SIZES = ['S', 'M', 'L', 'XL', 'XXL'].map((name) => ({ id: `static-${name}`, name }));
-const FALLBACK_COLORS = [
-  { id: 'static-black', name: 'Black', code: '#000000' },
-  { id: 'static-navy', name: 'Navy', code: '#1e3a8a' },
-  { id: 'static-purple', name: 'Purple', code: '#5b21b6' },
-  { id: 'static-pink', name: 'Pink', code: '#db2777' },
-  { id: 'static-green', name: 'Green', code: '#065f46' },
-];
-
 // API-তে description না থাকলে আগের static বুলেট পয়েন্ট
 const FALLBACK_DETAILS = [
   'সুপার সফট ও স্ট্রেচেবল ফেব্রিক',
@@ -55,6 +45,26 @@ const sameId = (a, b) => String(a) === String(b);
 
 // গ্যালারি আইটেম string বা {url|image|path} যেকোনোটা হতে পারে
 const toImageUrl = (g) => (typeof g === 'string' ? g : g?.url || g?.image || g?.path || null);
+
+// Size / color-এর অপশন combinations থেকে বানানো হয় (এটাই variation-এর মূল ডাটা)।
+// combinations-এ শুধু id থাকে, তাই নাম/রং/ছবি sizes ও colors array থেকে মিলিয়ে নেয়।
+function getOptions(combinations, details = [], key, label) {
+  if (combinations.length === 0) return details;
+
+  const options = new Map();
+  combinations.forEach((combo) => {
+    const id = combo[`${key}_id`];
+    if (id === null || id === undefined || id === '' || options.has(String(id))) return;
+    const info = details.find((item) => sameId(item.id, id));
+    options.set(String(id), {
+      ...info,
+      id,
+      // API-তে নাম না এলে id দেখায়; backend size_name / color_name দিলে নিজেই নাম দেখাবে
+      name: combo[`${key}_name`] || info?.name || `${label} ${id}`,
+    });
+  });
+  return [...options.values()];
+}
 
 /* ---------------- Flash sale countdown ---------------- */
 function FlashSaleStrip({ flashSale }) {
@@ -176,11 +186,37 @@ function SizeChartModal({ onClose }) {
   );
 }
 
-function CustomSizeModal({ colors, onClose }) {
+function CustomSizeModal({ colors, inStock, onClose, onAddToCart, onBuyNow }) {
   const [form, setForm] = useState(INITIAL_MEASUREMENTS);
   const [qty, setQty] = useState(1);
+  const [error, setError] = useState('');
 
-  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    setError('');
+  };
+
+  // মাপ ঠিক থাকলে তবেই cart / checkout-এ পাঠায়
+  const submit = (action) => {
+    if (!inStock) return setError('This product is out of stock');
+    if (!form.length.trim() || !form.body.trim()) return setError('Length এবং Body-র মাপ দিন');
+    if (form.orderType !== 'Single Bottom' && !form.sleeve.trim()) return setError('Sleeve-এর মাপ দিন');
+    if (colors.length > 0 && !form.color) return setError('কালার নির্বাচন করুন');
+
+    action({
+      color: colors.find((c) => sameId(c.id, form.color)) || null,
+      quantity: qty,
+      custom: {
+        length: form.length.trim(),
+        body: form.body.trim(),
+        sleeve: form.sleeve.trim(),
+        order_type: form.orderType,
+        note: form.note.trim(),
+      },
+    });
+    onClose();
+  };
+
   const inputClass =
     'w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-[#C8795A] focus:outline-none bg-white';
 
@@ -203,17 +239,19 @@ function CustomSizeModal({ colors, onClose }) {
             <input type="text" placeholder="ইঞ্চি / সেমি" className={inputClass} value={form.body} onChange={set('body')} />
           </div>
 
-          <div>
-            <label className="block font-medium text-gray-700 mb-1">Color (কালার)</label>
-            <select className={inputClass} value={form.color} onChange={set('color')}>
-              <option value="">কালার নির্বাচন করুন</option>
-              {colors.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {colors.length > 0 && (
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Color (কালার)</label>
+              <select className={inputClass} value={form.color} onChange={set('color')}>
+                <option value="">কালার নির্বাচন করুন</option>
+                {colors.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block font-medium text-gray-700 mb-1">Quantity (পরিমাণ)</label>
@@ -264,15 +302,23 @@ function CustomSizeModal({ colors, onClose }) {
           </div>
         </div>
 
+        {error && (
+          <p role="alert" className="mt-3 text-xs font-semibold text-red-600">
+            {error}
+          </p>
+        )}
+
         <div className="mt-5 flex flex-wrap justify-end gap-3">
           <button
             type="button"
+            onClick={() => submit(onAddToCart)}
             className="border border-[#C8795A] text-[#C8795A] hover:bg-[#C8795A] hover:text-white font-bold py-2.5 px-6 rounded-lg text-xs flex items-center gap-2 transition-all"
           >
             <ShoppingCart className="w-4 h-4" /> ADD TO CART
           </button>
           <button
             type="button"
+            onClick={() => submit(onBuyNow)}
             className="border border-[#C8795A] text-[#C8795A] hover:bg-[#C8795A] hover:text-white font-bold py-2.5 px-6 rounded-lg text-xs flex items-center gap-2 transition-all"
           >
             <ShoppingBag className="w-4 h-4" /> Buy Now
@@ -289,17 +335,21 @@ function ProductDetailsContent({ product }) {
   const navigate = useNavigate();
   const { addToCart, buyNow, optionsProduct, closeOptions, goToDetails } = useProductCardCart();
 
-  const sizes = product.sizes || [];
-  const colors = product.colors || [];
-  const combinations = product.combinations || [];
+  const combinations = useMemo(() => product.combinations || [], [product]);
+  const sizes = useMemo(
+    () => getOptions(combinations, product.sizes || [], 'size', 'Size'),
+    [combinations, product]
+  );
+  const colors = useMemo(
+    () => getOptions(combinations, product.colors || [], 'color', 'Color'),
+    [combinations, product]
+  );
   const needsSize = sizes.length > 0;
   const needsColor = colors.length > 0;
 
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
-  // API-তে size/color না থাকলে static ফলব্যাকের সিলেকশন (শুধু ভিজ্যুয়াল)
-  const [staticSize, setStaticSize] = useState(FALLBACK_SIZES[1]);
-  const [staticColor, setStaticColor] = useState(FALLBACK_COLORS[0]);
+  // অপশন একটাই হলে আগে থেকেই সিলেক্ট থাকে
+  const [selectedSize, setSelectedSize] = useState(() => (sizes.length === 1 ? sizes[0] : null));
+  const [selectedColor, setSelectedColor] = useState(() => (colors.length === 1 ? colors[0] : null));
   const [selectedMedia, setSelectedMedia] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('details');
@@ -448,14 +498,48 @@ function ProductDetailsContent({ product }) {
     navigate('/checkout', { state: { buyNowItem: createCartLine(buildPayload()) } });
   };
 
-  const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  /* ----- Custom size order ----- */
+  const buildCustomPayload = ({ color, quantity: customQty, custom }) => {
+    const measurements = [
+      `L ${custom.length}`,
+      `Body ${custom.body}`,
+      custom.sleeve && `Sleeve ${custom.sleeve}`,
+      custom.order_type,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    // দেখানোর জন্য আনুমানিক দাম; আসল total সার্ভার হিসাব করে
+    const colorCombo = color && combinations.find((c) => sameId(c.color_id, color.id));
+
+    return buildPayload({
+      thumb_image: color?.image || product.image,
+      quantity: customQty,
+      // একই মাপ + রঙ হলে একই cart লাইন, আলাদা হলে আলাদা লাইন
+      variant_id: `custom-${JSON.stringify([color?.id ?? '', ...Object.values(custom)])}`,
+      has_variants: true,
+      // cart / checkout-এ "Size: Custom (...)" হিসেবে দেখায়
+      selectedSize: null,
+      size_name: `Custom (${measurements})`,
+      selectedColor: color ? { id: color.id, name: color.name } : null,
+      selected_price: colorCombo?.price ?? null,
+      custom,
+    });
+  };
+
+  const handleCustomAddToCart = (details) => {
+    dispatch(addItem(buildCustomPayload(details)));
+    dispatch(openCartPopup());
+  };
+
+  const handleCustomBuyNow = (details) => {
+    navigate('/checkout', {
+      state: { buyNowItem: createCartLine(buildCustomPayload(details)) },
+    });
+  };
+
+  const whatsappLink =`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `Interested in ${product.name}`
   )}`;
-
-  const sizeList = needsSize ? sizes : FALLBACK_SIZES;
-  const colorList = needsColor ? colors : FALLBACK_COLORS;
-  const shownSize = needsSize ? selectedSize : staticSize;
-  const shownColor = needsColor ? selectedColor : staticColor;
 
   const active = media[selectedMedia] || media[0];
   const canBuy = product.in_stock;
@@ -583,18 +667,18 @@ function ProductDetailsContent({ product }) {
                 }`}
               >
                 <span className="block mb-3 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Available Sizes
+                  {needsSize ? 'Available Sizes' : 'Size'}
                 </span>
                 <div className="flex flex-wrap items-center gap-3">
-                  {sizeList.map((size) => {
-                    const available = needsSize ? isSizeAvailable(size) : true;
-                    const isSelected = shownSize && sameId(shownSize.id, size.id);
+                  {sizes.map((size) => {
+                    const available = isSizeAvailable(size);
+                    const isSelected = selectedSize && sameId(selectedSize.id, size.id);
                     return (
                       <button
                         key={size.id}
                         type="button"
                         disabled={!available}
-                        onClick={() => (needsSize ? handleSizeSelect(size) : setStaticSize(size))}
+                        onClick={() => handleSizeSelect(size)}
                         title={available ? size.name : `${size.name} - Out of stock`}
                         className={`min-w-10 h-10 px-2 text-xs font-semibold rounded-lg border transition-all ${
                           !available
@@ -633,7 +717,7 @@ function ProductDetailsContent({ product }) {
             }
 
             {/* Color Selector */}
-            {
+            {needsColor && (
               <div
                 ref={colorRef}
                 className={`mb-6 rounded-xl transition-colors ${
@@ -641,18 +725,18 @@ function ProductDetailsContent({ product }) {
                 }`}
               >
                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
-                  Colors{needsColor && selectedColor ? `: ${selectedColor.name}` : ''}
+                  Colors{selectedColor ? `: ${selectedColor.name}` : ''}
                 </span>
                 <div className="flex gap-3">
-                  {colorList.map((color) => {
-                    const available = needsColor ? isColorAvailable(color) : true;
-                    const isSelected = shownColor && sameId(shownColor.id, color.id);
+                  {colors.map((color) => {
+                    const available = isColorAvailable(color);
+                    const isSelected = selectedColor && sameId(selectedColor.id, color.id);
                     return (
                       <button
                         key={color.id}
                         type="button"
                         disabled={!available}
-                        onClick={() => (needsColor ? handleColorSelect(color) : setStaticColor(color))}
+                        onClick={() => handleColorSelect(color)}
                         style={{ backgroundColor: color.code || color.name }}
                         title={available ? color.name : `${color.name} - Out of stock`}
                         aria-label={color.name}
@@ -669,7 +753,7 @@ function ProductDetailsContent({ product }) {
                   </p>
                 )}
               </div>
-            }
+            )}
           </div>
 
           <div>
@@ -853,7 +937,14 @@ function ProductDetailsContent({ product }) {
 
       {isSizeChartOpen && <SizeChartModal onClose={() => setIsSizeChartOpen(false)} />}
       {isCustomSizeOpen && (
-        <CustomSizeModal colors={colorList} onClose={() => setIsCustomSizeOpen(false)} />
+        <CustomSizeModal
+          // শুধু আসল রং (static ফলব্যাকের id API-তে পাঠানো যায় না)
+          colors={colors}
+          inStock={product.in_stock}
+          onClose={() => setIsCustomSizeOpen(false)}
+          onAddToCart={handleCustomAddToCart}
+          onBuyNow={handleCustomBuyNow}
+        />
       )}
     </div>
   );

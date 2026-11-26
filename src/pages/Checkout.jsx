@@ -31,10 +31,14 @@ export default function CheckoutPage() {
   const [deliveryType, setDeliveryType] = useState("inside");
   const deliveryFee = deliveryType === "inside" ? 60 : 120;
   const total = subtotal + deliveryFee;
+  // Custom order-এর দাম দেখানো হয় না; cart-এ এমন item থাকলে total-ও লুকানো থাকে,
+  // নইলে total থেকে দাম বের করা যায়
+  const hasCustomItem = cartItems.some((item) => item.custom);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
      shipping_name: "",
      order_phone: "",
+     order_email: "",
      shipping_address: "",
   });
 
@@ -79,6 +83,17 @@ const handleOrderSubmit = async () => {
     return;
   }
 
+  // email optional, তবে দিলে ঠিক ফরম্যাটে হতে হবে
+  const email = formData.order_email.trim();
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+    Swal.fire({
+      icon: "error",
+      title: "Invalid Email",
+      text: "Please enter a valid email address",
+    });
+    return;
+  }
+
   try {
       setLoading(true);
 
@@ -96,6 +111,8 @@ const handleOrderSubmit = async () => {
       name: formData.shipping_name.trim(),
       phone: formData.order_phone.trim(),
       address: formData.shipping_address.trim(),
+      ...(email ? { email } : {}),
+      payment_method: "cash_on_delivery",
       shipping_method: deliveryType === "inside" ? 21 : 22,
       items: cartItems.map((product) => ({
         product_id: product.id,
@@ -103,6 +120,17 @@ const handleOrderSubmit = async () => {
         // size/color না থাকলে ফিল্ড পাঠানো হয় না (খালি string integer validation-এ আটকাবে)
         ...(product.size_id ? { size_id: Number(product.size_id) } : {}),
         ...(product.color_id ? { color_id: Number(product.color_id) } : {}),
+        // custom size order
+        ...(product.custom
+          ? {
+              is_custom: 1,
+              custom_length: product.custom.length,
+              custom_body: product.custom.body,
+              custom_sleeve: product.custom.sleeve,
+              custom_order_type: product.custom.order_type,
+              custom_note: product.custom.note,
+            }
+          : {}),
       })),
     };
 
@@ -121,7 +149,8 @@ const handleOrderSubmit = async () => {
     Swal.close();
 
     // আগে thank-you পেজে যাই, তারপর কার্ট খালি করি (নইলে খালি কার্টের মেসেজ এক ঝলক দেখা যায়)
-    navigate("/thank-you", { state: { order: result.data } });
+    // sentItems: কোন item custom ছিল তা thank-you পেজ এখান থেকে বোঝে
+    navigate("/thank-you", { state: { order: result.data, sentItems: payload.items } });
     if (!buyNowItem) dispatch(clearCart());
   } catch (error) {
      console.error("Error in createOrder:", error);
@@ -192,6 +221,16 @@ if (cartItems.length === 0) {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Your Email (optional)</Label>
+                  <Input className="h-11"
+                  type="email"
+                  name="order_email"
+                  value={formData.order_email}
+                  onChange={handleChange}
+                  />
+                </div>
+
+                <div className="sm:col-span-2 space-y-2">
                   <Label>Your Address</Label>
                   <Input className="h-11"
                    name="shipping_address"
@@ -274,9 +313,11 @@ if (cartItems.length === 0) {
                           .join(" | ")}
                       </p>
                     )}
-                    <p className="text-red-500 font-semibold text-sm sm:text-base">
-                      ৳{product.totalPrice.toFixed(2)}
-                    </p>
+                    {!product.custom && (
+                      <p className="text-red-500 font-semibold text-sm sm:text-base">
+                        ৳{product.totalPrice.toFixed(2)}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -291,10 +332,16 @@ if (cartItems.length === 0) {
             </div>
 
             {/* Total */}
-            <div className="flex justify-between font-bold text-base sm:text-lg mb-4 border-t pt-3">
-              <span>Total:</span>
-              <span>৳{total.toFixed(2)}</span>
-            </div>
+            {hasCustomItem ? (
+              <p className="text-sm text-gray-600 mb-4 border-t pt-3">
+                Custom order-এর দাম আমরা ফোনে জানিয়ে অর্ডার কনফার্ম করবো।
+              </p>
+            ) : (
+              <div className="flex justify-between font-bold text-base sm:text-lg mb-4 border-t pt-3">
+                <span>Total:</span>
+                <span>৳{total.toFixed(2)}</span>
+              </div>
+            )}
 
               <Button
                  onClick={handleOrderSubmit}

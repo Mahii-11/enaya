@@ -13,6 +13,7 @@ import OrderDetails from "./components/dashboard/OrderDetails";
 import ShopPage from "./pages/shoppages/ShopPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import Notfound from "./pages/Notfound";
+import FlashSalePage from "./pages/FlashSalePage";
 
 const router = createBrowserRouter([
   {
@@ -56,6 +57,11 @@ const router = createBrowserRouter([
 
         path: "/online-sale",
         element: <OnlineSale/>
+      },
+
+      {
+        path: "/flash-sale",
+        element: <FlashSalePage />
       },
 
       {
